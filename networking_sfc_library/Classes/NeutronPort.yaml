@@ -1,0 +1,74 @@
+#  Licensed under the Apache License, Version 2.0 (the "License"); you may
+#  not use this file except in compliance with the License. You may obtain
+#  a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#  License for the specific language governing permissions and limitations
+#  under the License.
+
+Namespaces:
+  =: org.openstack.networking_sfc
+  std: io.murano
+  res: io.murano.resources
+
+Name: NeutronPort
+
+Properties:
+  network:
+    Contract: $.class(res:Network).notNull()
+  name:
+    Contract: $.string()
+    Usage: Out
+  openstackId:
+    Contract: $.string()
+    Usage: Out
+
+Methods:
+  .init:
+    Body:
+      - $._environment: $.find(std:Environment).require()
+
+  deploy:
+    Body:
+      - $log: $._environment.reporter
+
+      - If: $.getAttr(deployed, false)
+        Then:
+          - $log.report($this, format('Port {0} is deployed already', id($)))
+          - Return: null
+
+      - $.name: format('port-{0}', id($))
+      - $log.report($this, format('Port name {0}', id($)))
+      - $networkData: $.network.describe()
+      - $template:
+          resources:
+            $.name:
+              type: 'OS::Neutron::Port'
+              properties:
+                network_id: $networkData.netId
+                replacement_policy: AUTO
+          outputs:
+            format('{0}-id', $portName):
+              value:
+                get_resource: $portName
+      - $._environment.stack.updateTemplate($template)
+      - $._environment.stack.push()
+
+      - $outputs: $._environment.stack.output()
+      - $log.report($this, format('Port {0} outputs => {1}', id($), $outputs))
+      - $.openstackId: $outputs.get(format('{0}-id', $.name))
+      - $.setAttr(deployed, true)
+
+  getRef:
+    Body:
+      Return:
+        get_resource: $.name
+
+  describe:
+    # TBD
+    Body:
+      - $.deploy()

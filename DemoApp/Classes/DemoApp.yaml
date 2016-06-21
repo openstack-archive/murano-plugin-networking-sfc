@@ -1,0 +1,73 @@
+Namespaces:
+  =: com.example
+  std: io.murano
+  res: io.murano.resources
+  netsfc: org.openstack.networking_sfc
+
+Name: DemoApp
+
+Extends: std:Application
+
+Properties:
+  network:
+    Contract: $.class(res:Network).notNull()
+  flavor:
+    Contract: $.string().notNull()
+  image:
+    Contract: $.string().notNull()
+
+Methods:
+  .init:
+    Body:
+      - $._env: $.find(std:Environment).require()
+      - $._sfcInstance:
+          instance: null
+          leftPort: null
+          rightPort: null
+      - $._leftInstance:
+          instance: null
+          sfcPort: null
+      - $._rightInstance:
+          instance: null
+          sfcPort: null
+
+  deploy:
+    Body:
+      - $log: $._env.reporter
+      - $log.report($this, 'test')
+      - If: not $.getAttr(deployed, false)
+        Then:
+          - $.network.deploy()
+
+#          - $.deployEndpoint($._leftInstance)
+#          - $.deployEndpoint($._rightInstance)
+          - $.deploySfcInstance()
+
+          - $.setAttr(deployed, true)
+
+  deploySfcInstance:
+    Body:
+      - $._sfcInstance.leftPort: new(netsfc:NeutronPort, $this, network => $.network)
+      - $._sfcInstance.leftPort.deploy()
+
+      - $._sfcInstance.rightPort: new(netsfc:NeutronPort, $this, network => $.network)
+      - $._sfcInstance.rightPort.deploy()
+
+      - $._sfcInstance.instance: new(
+          netsfc:Instance, $this, name => "sfc-instance",
+          flavor => $.flavor, image => $.image,
+          ports => [$._sfcInstance.leftPort, $._sfcInstance.rightPort])
+      - $._sfcInstance.instance.deploy()
+
+#  deployEndpoint:
+#    Arguments:
+#      instance:
+#        Contract: $
+#    Body:
+#      - $instance.sfcPort: new(res:NeutronPort, $this, network => $.network)
+#      - $instance.sfcPort.deploy()
+#
+#      - $instance.instance: new(res:LinuxMuranoInstance, $this)
+#      - $instance.instance.addInterface($instance.sfcPort)
+#
+#      - $instance.deploy()
