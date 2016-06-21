@@ -1,0 +1,35 @@
+namespaces:
+  =: io.murano.extensions.networking_sfc
+
+Name: PortPair
+
+Properties:
+  id:
+    Contract: $.string()
+    Usage: Out
+
+  name:
+    Contract: $.string()
+    Default: null
+
+  description:
+    Contract: $.string()
+    Default: null
+
+  ingress:
+    Contract: $.string().notNull()
+
+  egress:
+    Contract: $.string().notNull()
+
+Methods:
+  .init:
+    Body:
+      - $.sfcClient: new(NetworkingSFCClient)
+
+  deploy:
+    Body:
+      - $data: $.sfcClient.createPortPair(
+          name => $.name, description => $.descritpion,
+          ingress => $.ingress, egress => $.engress)
+      - $.id: $data.id

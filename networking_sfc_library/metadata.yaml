@@ -1,0 +1,36 @@
+#  Licensed under the Apache License, Version 2.0 (the "License"); you may
+#  not use this file except in compliance with the License. You may obtain
+#  a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#  License for the specific language governing permissions and limitations
+#  under the License.
+
+Format: MuranoPL/1.2
+
+Type: Library
+FullName: io.murano.apps.netsfc.plugin.NetSFC
+
+Name: NetSFC Library
+
+Description: >
+  Integration with neutron-sfc
+
+Author: kszukielojc
+
+Tags:
+  - SFC
+  - Neutron
+
+Classes:
+  io.murano.extensions.networking_sfc.FlowClassifier: FlowClassifier.yaml
+  io.murano.extensions.networking_sfc.PortChain: PortChain.yaml
+  io.murano.extensions.networking_sfc.PortPair: PortPair.yaml
+  io.murano.extensions.networking_sfc.PortPairGroup: PortPairGroup.yaml
+
+Require:
+  io.murano.extensions.networking_sfc: 0

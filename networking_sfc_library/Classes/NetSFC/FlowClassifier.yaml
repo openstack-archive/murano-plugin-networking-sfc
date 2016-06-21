@@ -1,0 +1,65 @@
+namespaces:
+  =: io.murano.extensions.networking_sfc
+
+Name: FlowClassifier
+
+Properties:
+  id:
+    Contract: $.string()
+    Usage: Out
+
+  name:
+    Contract: $.string()
+    Default: null
+
+  description:
+    Contract: $.string()
+    Default: null
+
+  ethertype:
+    Contract: $.string().notNull()
+    Default: 'IPv4'
+
+  protocol:
+    Contract: $.string()
+    Default: null
+
+  sourcePortRange:
+    Contract: [$.int(), 2, 2]
+
+  destinationPortRange:
+    Contract: [$.int(), 2, 2]
+
+  sourceIpPrefix:
+    Contract: $.string()
+    Default: null
+
+  destinationIpPrefix:
+    Contract: $.string()
+    Default: null
+
+  logicalSourcePort:
+    Contract: $.string().notNull()
+
+  logicalDestinationPort:
+    Contract: $.string().notNull()
+
+Methods:
+  .init:
+    Body:
+      - $.sfcClient: new(NetworkingSFCClient)
+
+  deploy:
+    Body:
+      - $data: $.sfcClient.createFlowClassifier(
+          name => $.name, description => $.description,
+          ethertype => $.ethertype, protocol => $.protocol,
+          sourcePortRangeMin => $.sourcePortRange[0],
+          sourcePortRangeMax => $.sourcePortRange[1],
+          destinationPortRangeMin => $.destinationPortRange[0],
+          destinationPortRangeMin => $.destinationPortRange[1],
+          sourceIpPrefix => $.sourceIpPrefix,
+          destinationIpPrefix => $.destinationIpPrefix,
+          logicalSourcePort => $.localSourcePort,
+          logicalDestinationPort => $logicalDestinationPort)
+      - $.id: $data.id

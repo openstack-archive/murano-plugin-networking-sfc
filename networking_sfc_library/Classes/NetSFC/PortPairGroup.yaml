@@ -1,0 +1,37 @@
+namespaces:
+  =: io.murano.extensions.networking_sfc
+
+Name: PortPairGroup
+
+Properties:
+  id:
+    Contract: $.string()
+    Usage: Out
+
+  name:
+    Contract: $.string()
+    Default: null
+
+  description:
+    Contract: $.string()
+    Default: null
+
+  portPairs:
+    Contract: [$.class(PortPair).notNull()]
+
+Methods:
+  .init:
+    Body:
+      - $.sfcClient: new(NetworkingSFCClient)
+
+  deploy:
+    Body:
+      - $portPairs: []
+      - For: $id
+        In: $.portPairs
+        Do:
+          - $portPairs.append(): $id
+      - $data: $sfcClient.createPortPairGroup(
+          name => $.name, description => $.description,
+          portPairs => $portPairs)
+      - $.id: $data.id
