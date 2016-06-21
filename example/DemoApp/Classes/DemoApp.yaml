@@ -1,0 +1,90 @@
+#  Licensed under the Apache License, Version 2.0 (the "License"); you may
+#  not use this file except in compliance with the License. You may obtain
+#  a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#  License for the specific language governing permissions and limitations
+#  under the License.
+
+Namespaces:
+  =: com.example
+  std: io.murano
+  res: io.murano.resources
+  netsfc: org.openstack.networking_sfc
+
+Name: DemoApp
+
+Extends: std:Application
+
+Properties:
+  network:
+    Contract: $.class(res:Network).notNull()
+  flavor:
+    Contract: $.string().notNull()
+  image:
+    Contract: $.string().notNull()
+
+Methods:
+  .init:
+    Body:
+      - $._env: $.find(std:Environment).require()
+      - $._sfcInstance:
+          instance: null
+          leftPort: null
+          rightPort: null
+          portPair: null
+      - $._leftInstance:
+          instance: null
+          sfcPort: null
+      - $._rightInstance:
+          instance: null
+          sfcPort: null
+
+  deploy:
+    Body:
+      - $log: $._env.reporter
+      - If: not $.getAttr(deployed, false)
+        Then:
+          - $.network.deploy()
+
+#          - $.deployEndpoint($._leftInstance)
+#          - $.deployEndpoint($._rightInstance)
+          - $.deploySfcInstance()
+
+          - $.setAttr(deployed, true)
+
+  deploySfcInstance:
+    Body:
+      - $._sfcInstance.leftPort: new(netsfc:NeutronPort, $this, network => $.network)
+      - $._sfcInstance.leftPort.deploy()
+
+      - $._sfcInstance.rightPort: new(netsfc:NeutronPort, $this, network => $.network)
+      - $._sfcInstance.rightPort.deploy()
+
+      - $._sfcInstance.instance: new(
+          netsfc:Instance, $this, name => "sfc-instance",
+          flavor => $.flavor, image => $.image,
+          ports => [$._sfcInstance.leftPort, $._sfcInstance.rightPort])
+      - $._sfcInstance.instance.deploy()
+
+      - $._sfcInstance.portPair: new(
+          netsfc:PortPair, $this, ingress => $._sfcInstance.leftPort,
+          egress => $._sfcInstance.rightPort)
+      - $._sfcInstance.portPair.deploy()
+
+#  deployEndpoint:
+#    Arguments:
+#      instance:
+#        Contract: $
+#    Body:
+#      - $instance.sfcPort: new(res:NeutronPort, $this, network => $.network)
+#      - $instance.sfcPort.deploy()
+#
+#      - $instance.instance: new(res:LinuxMuranoInstance, $this)
+#      - $instance.instance.addInterface($instance.sfcPort)
+#
+#      - $instance.deploy()
