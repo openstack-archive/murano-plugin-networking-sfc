@@ -1,0 +1,11 @@
+Format: 1.3
+Type: Application
+FullName: com.example.DemoApp
+Name: DemoApp
+Description: Demo Application
+Author: 'Mirantis, Inc'
+Tags: [Server]
+Classes:
+  com.example.DemoApp: DemoApp.yaml
+Require:
+  org.openstack.networking_sfc:
