@@ -1,0 +1,78 @@
+#  Licensed under the Apache License, Version 2.0 (the "License"); you may
+#  not use this file except in compliance with the License. You may obtain
+#  a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#  License for the specific language governing permissions and limitations
+#  under the License.
+
+Namespaces:
+  =: org.openstack.networking_sfc
+
+Name: FlowClassifier
+
+Properties:
+  id:
+    Contract: $.string()
+    Usage: Out
+
+  name:
+    Contract: $.string()
+    Default: null
+
+  description:
+    Contract: $.string()
+    Default: null
+
+  ethertype:
+    Contract: $.string().notNull()
+    Default: 'IPv4'
+
+  protocol:
+    Contract: $.string()
+    Default: null
+
+  sourcePortRange:
+    Contract: [$.int(), 2, 2]
+
+  destinationPortRange:
+    Contract: [$.int(), 2, 2]
+
+  sourceIpPrefix:
+    Contract: $.string()
+    Default: null
+
+  destinationIpPrefix:
+    Contract: $.string()
+    Default: null
+
+  logicalSourcePort:
+    Contract: $.string().notNull()
+
+  logicalDestinationPort:
+    Contract: $.string().notNull()
+
+Methods:
+  .init:
+    Body:
+      - $env: $.find(std:Environment).require()
+      - $.sfcClient: new('io.murano.extensions.networking_sfc.NetworkingSfcClient', $env)
+
+  deploy:
+    Body:
+      - $data: $.sfcClient.createFlowClassifier(
+          name => $.name, description => $.description,
+          ethertype => $.ethertype, protocol => $.protocol,
+          sourcePortRangeMin => $.sourcePortRange[0],
+          sourcePortRangeMax => $.sourcePortRange[1],
+          destinationPortRangeMin => $.destinationPortRange[0],
+          destinationPortRangeMin => $.destinationPortRange[1],
+          sourceIpPrefix => $.sourceIpPrefix,
+          destinationIpPrefix => $.destinationIpPrefix,
+          logicalSourcePort => $.localSourcePort,
+          logicalDestinationPort => $logicalDestinationPort)
+      - $.id: $data.id
