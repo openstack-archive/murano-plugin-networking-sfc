@@ -1,0 +1,36 @@
+Version: 2.2
+
+Application:
+  ?:
+    type: com.example.DemoApp
+  flavor: $.config.flavor
+  image: $.config.osImage
+  network:
+    ?:
+      type: io.murano.resources.ExistingNeutronNetwork
+    internalNetworkName: $.config.network[0]
+    internalSubnetworkName: $.config.network[1]
+
+Forms:
+  - config:
+      fields:
+        - name: flavor
+          type: flavor
+          label: Instance flavor
+          description: >-
+            Select registered in Openstack flavor. Consider that application performance
+            depends on this parameter.
+          required: false
+        - name: osImage
+          type: image
+          imageType: linux
+          label: Instance image
+          description: >-
+            Select valid image for the application. Image should already be prepared and
+            registered in glance.
+        - name: network
+          type: network
+          label: Network
+          description: Select a network to join. 'Auto' corresponds to a default environment's network.
+          required: false
+          murano_networks: translate
