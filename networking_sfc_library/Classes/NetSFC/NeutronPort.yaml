@@ -1,0 +1,113 @@
+#  Licensed under the Apache License, Version 2.0 (the "License"); you may
+#  not use this file except in compliance with the License. You may obtain
+#  a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#  License for the specific language governing permissions and limitations
+#  under the License.
+
+Namespaces:
+  =: io.murano.extensions.networking_sfc
+  std: io.murano
+
+Name: NeutronPort
+
+Properties:
+  portName:
+    Contract: $.string()
+    Usage: InOut
+  openstackId:
+    Contract: $.string()
+    Usage: Out
+
+Methods:
+  .init:
+    Body:
+      - $._environment: $.find(std:Environment).require()
+
+  deploy:
+    Arguments:
+      - portName:
+          Contract: $
+      - netRef:
+          Contract: $
+      - subnetRef:
+          Contract: $
+      - securityGroupName:
+          Contract: $.string()
+      - sharedIps:
+          Contract:
+            - $.class(std:SharedIp)
+    Body:
+      - If: not $.getAttr(deployed, false)
+        Then:
+          - $.portName: $portName
+          - $patchTemplate: $.createPort($.portName, $netRef, $subnetRef)
+          - If: bool($securityGroupName)
+            Then:
+              - $template:
+                  resources:
+                    $portName:
+                      properties:
+                        security_groups:
+                          - get_resource: $securityGroupName
+              - $template: $patchTemplate.mergeWith($template)
+
+          - For: sip
+            In: $sharedIps
+            Do:
+              - $template:
+                  resources:
+                    $portName:
+                      properties:
+                        allowed_address_pairs:
+                          - ip_address: $sip.getSharedIpRef()
+              - $patchTemplate: $patchTemplate.mergeWith($template)
+          - $._environment.stack.updateTemplate($template)
+          - $._environment.stack.push()
+          - $outputs: $._environment.stack.output()
+          - $.openstackId: $outputs.get(format('port-{0}-id', $portName))
+          - $.setAttr(deployed, true)
+
+  getRef:
+    Body:
+      Return: $.openstackId
+
+  createPort:
+    Arguments:
+      - portName:
+          Contract: $
+      - netRef:
+          Contract: $
+      - subnetRef:
+          Contract: $
+    Body:
+      - $template:
+          resources:
+            $portName:
+              type: 'OS::Neutron::Port'
+              properties:
+                network_id: $netRef
+                replacement_policy: AUTO
+                fixed_ips:
+                  - subnet_id: $subnetRef
+          outputs:
+            format('port-{0}-id', $portName):
+              value:
+                get_resource: $portName
+      - Return: $template
+
+  describe:
+    Body:
+      - $.deploy()
+
+  .destroy:
+    Body:
+      - $template: $._environment.stack.current()
+      - $template.resources: $template.resources.delete($portName)
+      - $._environment.stack.setTemplate($template)
+      - $._environment.stack.push()
