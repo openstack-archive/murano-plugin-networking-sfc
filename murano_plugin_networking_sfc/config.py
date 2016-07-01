@@ -12,4 +12,12 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from murano_plugin_networking_sfc.client import NetworkingSfcClient  # noqa
+from oslo_config import cfg
+
+
+def init_config(conf):
+    opts = [
+        cfg.StrOpt('endpoint_type', default='publicURL')
+    ]
+    conf.register_opts(opts, group="networking_sfc")
+    return conf.networking_sfc
