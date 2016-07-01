@@ -49,6 +49,7 @@ Methods:
               properties:
                 network_id: $networkData.netId
                 replacement_policy: AUTO
+                port_security_enabled: false
           outputs:
             format('{0}-id', $.name):
               value:
