@@ -1,0 +1,60 @@
+#  Copyright 2016 Mirantis, Inc.
+#
+#  Licensed under the Apache License, Version 2.0 (the "License"); you may
+#  not use this file except in compliance with the License. You may obtain
+#  a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#  License for the specific language governing permissions and limitations
+#  under the License.
+
+Namespaces:
+  =: org.openstack.networking_sfc
+  std: io.murano
+
+Name: PortPair
+
+Properties:
+  id:
+    Contract: $.string()
+    Usage: Out
+
+  name:
+    Contract: $.string()
+
+  description:
+    Contract: $.string()
+
+  ingress:
+    Contract: $.class(NeutronPort).notNull()
+
+  egress:
+    Contract: $.class(NeutronPort).notNull()
+
+Methods:
+  .init:
+    Body:
+      - $env: $.find(std:Environment).require()
+      - $.sfcClient: new('io.murano.extensions.networking_sfc.NetworkingSfcClient', $env)
+
+  deploy:
+    Body:
+      - If: $.getAttr(deployed, false)
+        Then:
+          - Return: null
+
+      - $data: $.sfcClient.createPortPair(
+          name => $.name, description => $.description,
+          ingress => $.ingress.openstackId, egress => $.egress.openstackId)
+      - $.id: $data.id
+      - $.setAttr(deployed, true)
+
+  .destroy:
+    Body:
+      - If: $.getAttr(deployed, false)
+        Then:
+          - $.sfcClient.deletePortPair($.id)
