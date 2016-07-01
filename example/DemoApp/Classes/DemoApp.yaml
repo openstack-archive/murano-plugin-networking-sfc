@@ -1,0 +1,153 @@
+#  Licensed under the Apache License, Version 2.0 (the "License"); you may
+#  not use this file except in compliance with the License. You may obtain
+#  a copy of the License at
+#
+#       http://www.apache.org/licenses/LICENSE-2.0
+#
+#  Unless required by applicable law or agreed to in writing, software
+#  distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
+#  WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
+#  License for the specific language governing permissions and limitations
+#  under the License.
+
+Namespaces:
+  =: com.example
+  std: io.murano
+  res: io.murano.resources
+  netsfc: org.openstack.networking_sfc
+
+Name: DemoApp
+
+Extends: std:Application
+
+Properties:
+  network:
+    Contract: $.class(res:Network).notNull()
+  flavor:
+    Contract: $.string().notNull()
+  image:
+    Contract: $.string().notNull()
+
+  sfcInstance:
+    Usage: InOut
+    Contract:
+      instance: $.class(netsfc:Instance)
+      leftPort: $.class(netsfc:NeutronPort)
+      rightPort: $.class(netsfc:NeutronPort)
+
+  leftInstance:
+    Usage: InOut
+    Contract:
+      instance: $.class(netsfc:Instance)
+      port: $.class(netsfc:NeutronPort)
+
+  rightInstance:
+    Usage: InOut
+    Contract:
+      instance: $.class(netsfc:Instance)
+      port: $.class(netsfc:NeutronPort)
+
+  portPairGroup:
+    Contract: $.class(netsfc:PortPairGroup)
+    Usage: InOut
+
+  flowClassifier:
+    Contract: $.class(netsfc:FlowClassifier)
+    Usage: InOut
+
+  portChain:
+    Contract: $.class(netsfc:PortChain)
+    Usage: InOut
+
+Methods:
+  .init:
+    Body:
+      - $._env: $.find(std:Environment).require()
+
+  deploy:
+    Body:
+      - If: not $.getAttr(deployed, false)
+        Then:
+          - $._log: $._env.reporter
+          - $._log.report($this, 'Deploying SFC network...')
+          - $.network.deploy()
+
+          - $._log.report($this, 'Deploying left instance...')
+          - $.leftInstance: $.deployEndpoint('left-endpoint')
+
+          - $._log.report($this, 'Deploying right instance...')
+          - $.rightInstance: $.deployEndpoint('right-endpoint')
+
+          - $._log.report($this, 'Deploying SFC instance...')
+          - $.deploySfcInstance()
+
+          - $._log.report($this, 'Creating port chain...')
+          - $.createSfcChain()
+
+          - $._log.report($this, 'Done.')
+          - $.setAttr(deployed, true)
+
+  deploySfcInstance:
+    Body:
+      - $.sfcInstance.leftPort: new(netsfc:NeutronPort, $this, network => $.network)
+      - $._log.report($this, '$.sfcInstance.leftPort.deploy()')
+      - $.sfcInstance.leftPort.deploy()
+
+      - $.sfcInstance.rightPort: new(netsfc:NeutronPort, $this, network => $.network)
+      - $._log.report($this, '$.sfcInstance.rigitPort.deploy()')
+      - $.sfcInstance.rightPort.deploy()
+
+      - $.sfcInstance.instance: new(
+          netsfc:Instance, $this, name => "sfc-instance",
+          flavor => $.flavor, image => $.image,
+          ports => [$.sfcInstance.leftPort, $.sfcInstance.rightPort])
+      - $._log.report($this, '$.sfcInstance.instance.deploy()')
+      - $.sfcInstance.instance.deploy()
+
+      - $portPair: new(
+          netsfc:PortPair, $this, ingress => $.sfcInstance.leftPort,
+          egress => $.sfcInstance.rightPort)
+      - $._log.report($this, '$portPair.deploy()')
+      - $portPair.deploy()
+
+      - $.portPairGroup: new(
+          netsfc:PortPairGroup, $this, portPairs => [$portPair])
+      - $._log.report($this, '$.portPairGroup.deploy()')
+      - $.portPairGroup.deploy()
+
+  deployEndpoint:
+    Arguments:
+      name:
+        Contract: $.string().notNull()
+    Body:
+      - $instance: {}
+      - $instance.port: new(netsfc:NeutronPort, $this, network => $.network)
+      - $._log.report($this, '$instance.port.deploy()')
+      - $instance.port.deploy()
+
+      - $instance.instance: new(
+          netsfc:Instance, $this, name => $name,
+          flavor => $.flavor, image => $.image,
+          ports => [$instance.port])
+      - $._log.report($this, '$instance.instance.deploy()')
+      - $instance.instance.deploy()
+
+      - Return: $instance
+
+  createSfcChain:
+    Body:
+      - $._log.report($this, format('{0}, {1}', $.leftInstance.port, $.rightInstance.port))
+      - $.flowClassifier: new(
+          netsfc:FlowClassifier, $this, protocol => 'TCP',
+          destinationPortMin => 8000, destinationPortMax => 8080,
+          logicalSourcePort => $.leftInstance.port,
+          logicalDestinationPort => $.rightInstance.port)
+      - $._log.report($this, '$.flowClassifier.deploy()')
+      - $.flowClassifier.deploy()
+
+      - $.portChain: new(
+          netsfc:PortChain, $this,
+          portPairGroups => [$.portPairGroup],
+          flowClassifiers => [$.flowClassifier])
+      - $._log.report($this, '$.portChain.deploy()')
+      - $.portChain.deploy()
