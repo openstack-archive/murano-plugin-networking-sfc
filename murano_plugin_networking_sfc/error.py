@@ -12,4 +12,10 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
-from murano_plugin_networking_sfc.client import NetworkingSfcClient  # noqa
+
+class APIError(Exception):
+    pass
+
+
+class NotFound(APIError):
+    pass
