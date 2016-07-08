@@ -1,0 +1,10 @@
+Code-Review+2: Sergey Slipushenko <sslypushenko@mirantis.com>
+Code-Review+1: Stan Lagun <slagun@mirantis.com>
+Code-Review+2: Krzysztof Szukiełojć <kszukielojc@mirantis.com>
+Workflow+1: Krzysztof Szukiełojć <kszukielojc@mirantis.com>
+Verified+2: Jenkins
+Submitted-by: Jenkins
+Submitted-at: Fri, 08 Jul 2016 15:10:28 +0000
+Reviewed-on: https://review.openstack.org/336632
+Project: openstack/murano-plugin-networking-sfc
+Branch: refs/heads/master
