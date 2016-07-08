@@ -1,0 +1,64 @@
+Namespaces:
+  =: io.murano.test
+  sys: io.murano.system
+  res: io.murano.resources
+  netsfc: org.openstack.networkingSfc
+
+Extends: TestFixture
+
+Name: InstanceTest
+
+Methods:
+    .init:
+      Body:
+        # Object model can be loaded from json file, or provided
+        # directly in MuranoPL code as a yaml insertion.
+        - $.envJson: new(sys:Resources).json('env.json')
+        - $.log: logger('test')
+
+    describeMock:
+      Body:
+        - $.log.info('Network describe')
+        - $netwotkData:
+            netId: '326e367d49f34d4c8d3b234d053411f3'
+        - Return: $netwotkData
+
+    updateTemplateMock:
+      Arguments:
+        template:
+          Contract: $
+      Body:
+        - $.log.info('Heat stack update')
+
+    getStackOut:
+      Body:
+        - $.log.info('Mocking heat stack')
+        - Return: $.heatOutput
+
+    testDeploy:
+      Body:
+        - $.log.info('1')
+        - $env: $this.load($.envJson)
+        - $.log.info('2')
+        - $network: new(res:Network, $this)
+        - $.log.info(format('3 - {0}', id($network)))
+        - $port: new(netsfc:NeutronPort, $this, network => $network)
+        - $.log.info('4')
+        - $portName: format('port-{0}', id($port))
+        - $.log.info('5')
+        - $.log.info($portName)
+#        - inject($.network, describeMock, $this, describeMock)
+#        - $heatOutput: dict(format('{0}-id', $portName) => $portName)
+#        - inject($.env.stack, updateTemplate, $this, updateTemplateMock)
+#        - inject($.env.stack, push, $heatOutput)
+#        - inject($.env.stack, output, $heatOutput)
+#        - $port.deploy()
+#        - $.assertEqual(true, $port.deployed)
+#
+#        - $networks:
+#            useEnvironmentNetwork: false
+#            useFlatNetwork: false
+#        - $sfcInstance: new(netsfc:Instance, $env, name => "sfc-instance", flavor => "flavor", image => "image", keyname => "keyname", ports => [$port], networks => $networks))
+#        - $template: {}
+#        - $template: $.sfcInstance.prepareStackTemplate($template)
+#        - $.assertEqual({}, $template)
