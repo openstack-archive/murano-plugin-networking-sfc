@@ -1,0 +1,87 @@
+Namespaces:
+  =: io.murano.test
+  sys: io.murano.system
+  res: io.murano.resources
+  netsfc: org.openstack.networkingSfc
+
+Extends: TestFixture
+
+Name: InstanceTest
+
+Methods:
+    .init:
+      Body:
+        # Object model can be loaded from json file, or provided
+        # directly in MuranoPL code as a yaml insertion.
+        - $.envJson: new(sys:Resources).json('env.json')
+        - $.log: logger('test')
+
+    describeMock:
+      Body:
+        - $.log.info('Mock fired - Network describe')
+        - $netwotkData:
+            netId: $.portMock.netId
+        - Return: $netwotkData
+
+    updateTemplateMock:
+      Arguments:
+        template:
+          Contract: $
+      Body:
+        - $templateRef:
+            resources:
+              $.portMock.name:
+                type: 'OS::Neutron::Port'
+                properties:
+                  network_id: $.portMock.netId
+                  replacement_policy: AUTO
+                  port_security_enabled: false
+            outputs:
+              format('{0}-id', $.portMock.name):
+                value:
+                  get_resource: $.portMock.name
+        - $.assertEqual($templateRef, $template)
+        - $.log.info('Mock fired - Heat stack update')
+
+    pushMock:
+      Body:
+        - $.log.info('Mock fired - Heat stack push')
+
+    testDeploy:
+      Body:
+        - $env: $this.load($.envJson)
+        - $.log.info('Environment is loaded')
+        - $network: new(res:Network, $env)
+        - inject($network, describe, $this, describeMock)
+        - $.log.info('Prepare network mock')
+        - $port: new(netsfc:NeutronPort, $env, network => $network)
+        - $.log.info('netsfc:Neutron port created')
+        - $.portMock: 
+            name: 
+              format('port-{0}', id($port))
+            netId:
+              id($network)
+        - $.log.info('Port data is prepared')
+        - $heatOutput: dict(format('{0}-id', $.portMock.name) => $.portMock.name)
+        - inject($env.stack, updateTemplate, $this, updateTemplateMock)
+        - inject($env.stack, push, $this, pushMock)
+        - inject($env.stack, output, $heatOutput)
+        - $.log.info('Mock for Heat are prepared')
+        - $port.deploy()
+        - $.log.info('Port deployed')
+        - $.assertEqual($templateRef, $template)
+        - $networks:
+            useEnvironmentNetwork: false
+            useFlatNetwork: false
+        - $sfcInstance: new(netsfc:Instance, $env, name => "sfc-instance", flavor => "flavor", image => "image", keyname => "keyname", ports => [$port], networks => $networks)
+        - $.log.info('sfcInstance created')
+        - $templateRef: 
+            resources:
+              $sfcInstance.name:
+                properties:
+                  networks:
+                    - port:
+                        $port.getRef()
+        - $template: $sfcInstance.prepareStackTemplate($template)
+        - $.assertEqual($templateRef, $template)
+

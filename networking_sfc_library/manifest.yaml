@@ -28,6 +28,7 @@ Classes:
   org.openstack.networkingSfc.PortChain: PortChain.yaml
   org.openstack.networkingSfc.PortPair: PortPair.yaml
   org.openstack.networkingSfc.PortPairGroup: PortPairGroup.yaml
+  io.murano.test.InstanceTest: InstanceTest.yaml
 
 Require:
   murano-plugin-networking-sfc:
