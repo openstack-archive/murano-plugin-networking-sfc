@@ -17,7 +17,7 @@ Namespaces:
   conf: io.murano.configuration
   netsfc: org.openstack.networkingSfc
 
-Name: DemoApp
+Name: SfcTestApp
 
 Extends: std:Application
 
