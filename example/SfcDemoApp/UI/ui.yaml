@@ -14,7 +14,7 @@ Version: 2.2
 
 Application:
   ?:
-    type: com.example.DemoApp
+    type: com.example.SfcDemoApp
   flavor: $.config.flavor
   image: $.config.osImage
   keyname: $.config.keyname
