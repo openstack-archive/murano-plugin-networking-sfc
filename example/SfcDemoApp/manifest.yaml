@@ -12,12 +12,12 @@
 
 Format: 1.3
 Type: Application
-FullName: com.example.DemoApp
-Name: DemoApp
-Description: Demo Application
+FullName: com.example.SfcDemoApp
+Name: SFC Test App
+Description: Networking SFC test application
 Author: 'Mirantis, Inc'
 Tags: [Server]
 Classes:
-  com.example.DemoApp: DemoApp.yaml
+  com.example.SfcDemoApp: SfcDemoApp.yaml
 Require:
   org.openstack.networkingSfc:
