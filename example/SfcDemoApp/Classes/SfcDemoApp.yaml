@@ -16,7 +16,7 @@ Namespaces:
   res: io.murano.resources
   conf: io.murano.configuration
   netsfc: org.openstack.networkingSfc
-
+  sys: io.murano.system
 Name: SfcDemoApp
 
 Extends: std:Application
@@ -31,6 +31,9 @@ Properties:
   keyname:
     Contract: $.string()
     Default: null
+  assignFloatingIp:
+    Contract: $.bool().notNull()
+    Default: true
 
   sfcInstance:
     Usage: InOut
@@ -86,9 +89,25 @@ Methods:
 
           - $._log.report($this, 'Creating port chain...')
           - $.createSfcChain()
+          - $.deploySoftware('left-endpoint', $.leftInstance.instance)
+          - $.deploySoftware('right-endpoint', $.rightInstance.instance)
+          - $.deploySoftware('sfc-app', $.sfcInstance.instance)
 
           - $._log.report($this, 'Done.')
           - $.setAttr(deployed, true)
+
+  deploySoftware:
+    Arguments:
+      - name:
+          Contract: $.string().notNull()
+      - inst:
+          Contract: $.class(netsfc:Instance).notNull()
+
+    Body:
+      - $resources: new(sys:Resources)
+      - $template: $resources.yaml('SFCDemo.template').bind(dict(image => $name))
+      - $inst.agent.call($template, $resources)
+      - $._log.report($this, $name)
 
   deploySfcInstance:
     Body:
@@ -102,7 +121,8 @@ Methods:
       - $.sfcInstance.instance: new(
           netsfc:Instance, $this, name => "sfc-instance",
           flavor => $.flavor, image => $.image, keyname => $.keyname,
-          ports => [$.sfcInstance.port], networks => $networks)
+          ports => [$.sfcInstance.port], networks => $networks , assignFloatingIp => $.assignFloatingIp)
+
       - $._log.report($this, '$.sfcInstance.instance.deploy()')
       - $.sfcInstance.instance.deploy()
 
@@ -138,7 +158,7 @@ Methods:
           netsfc:Instance, $this, name => $name,
           flavor => $.flavor, image => $.image,
           keyname => $.keyname, ports => [$instance.port],
-          networks => $networks)
+          networks => $networks, assignFloatingIp => $.assignFloatingIp)
       - $._log.report($this, '$instance.instance.deploy()')
       - $instance.instance.deploy()
 
