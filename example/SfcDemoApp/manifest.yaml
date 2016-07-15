@@ -14,7 +14,14 @@ Format: 1.3
 Type: Application
 FullName: com.example.SfcDemoApp
 Name: SFC Test App
-Description: Networking SFC test application
+Description: |
+ Networking SFC test application.
+ This application spawns three VMs. Between two of them traffic is being
+ pushed using netcat. The third is connected in the middle using Networking
+ SFC and ntopng software is deployed there for web-based traffic analysis.
+ It allows to observe traffic between left and right VMs which is flowing
+ using Networking SFC functionality.
+
 Author: 'Mirantis, Inc'
 Tags: [Server]
 Classes:
