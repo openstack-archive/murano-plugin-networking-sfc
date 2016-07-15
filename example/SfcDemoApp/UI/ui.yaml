@@ -18,6 +18,7 @@ Application:
   flavor: $.config.flavor
   image: $.config.osImage
   keyname: $.config.keyname
+  assignFloatingIP: $.config.assignFloatingIP
   network:
     ?:
       type: io.murano.resources.ExistingNeutronNetwork
@@ -53,4 +54,11 @@ Forms:
           description: >-
             Select the Key Pair to control access to instances. You can login to
             instances using this KeyPair after the deployment of application.
+          required: false
+        - name: assignFloatingIP
+          type: boolean
+          label: Assign Floating IP
+          description: >-
+             Select to true to assign floating IP automatically
+          initial: true
           required: false

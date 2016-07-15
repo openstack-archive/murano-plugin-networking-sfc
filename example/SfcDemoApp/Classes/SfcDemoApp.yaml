@@ -31,6 +31,9 @@ Properties:
   keyname:
     Contract: $.string()
     Default: null
+  assignFloatingIp:
+    Contract: $.bool().notNull()
+    Default: true
 
   sfcInstance:
     Usage: InOut
@@ -102,7 +105,8 @@ Methods:
       - $.sfcInstance.instance: new(
           netsfc:Instance, $this, name => "sfc-instance",
           flavor => $.flavor, image => $.image, keyname => $.keyname,
-          ports => [$.sfcInstance.port], networks => $networks)
+          ports => [$.sfcInstance.port], networks => $networks , assignFloatingIp => true)
+
       - $._log.report($this, '$.sfcInstance.instance.deploy()')
       - $.sfcInstance.instance.deploy()
 
