@@ -16,7 +16,7 @@ Namespaces:
   res: io.murano.resources
   conf: io.murano.configuration
   netsfc: org.openstack.networkingSfc
-
+  sys: io.murano.system
 Name: SfcDemoApp
 
 Extends: std:Application
@@ -86,9 +86,30 @@ Methods:
 
           - $._log.report($this, 'Creating port chain...')
           - $.createSfcChain()
-
-          - $._log.report($this, 'Done.')
+          - $.deploySoftware('left-endpoint', $.leftInstance.instance)
+          - $.deploySoftware('right-endpoint', $.rightInstance.instance)
+          - $.deploySoftware('sfc-app', $.sfcInstance.instance)
+          - $host: $.sfcInstance.instance.ipAddresses[0]
           - $.setAttr(deployed, true)
+          - $._log.report($this, format('Ntop is available at http://{0} admin/r00tme', $host))
+
+
+  deploySoftware:
+    Arguments:
+      - DeployType:
+          Contract: $.string().notNull()
+      - instance:
+          Contract: $.class(netsfc:Instance).notNull()
+
+    Body:
+      - $resources: new(sys:Resources)
+      - $template: $resources.yaml('SFCDemo.template').bind(dict(
+          DeployType => $DeployType,
+          SourceIp => $.leftInstance.instance.ipAddresses[0],
+          DestinationIp => $.rightInstance.instance.ipAddresses[0] ))
+      - $instance.agent.call($template, $resources)
+      - $._log.report($this, $name)
+
 
   deploySfcInstance:
     Body:
@@ -102,7 +123,8 @@ Methods:
       - $.sfcInstance.instance: new(
           netsfc:Instance, $this, name => "sfc-instance",
           flavor => $.flavor, image => $.image, keyname => $.keyname,
-          ports => [$.sfcInstance.port], networks => $networks)
+          ports => [$.sfcInstance.port], networks => $networks )
+
       - $._log.report($this, '$.sfcInstance.instance.deploy()')
       - $.sfcInstance.instance.deploy()
 
