@@ -58,7 +58,7 @@ Properties:
     Contract: $.class(NeutronPort)
 
   logicalDestinationPort:
-    Contract: $.class(NeutronPort).notNull()
+    Contract: $.class(NeutronPort)
 
 Methods:
   .init:
@@ -77,6 +77,11 @@ Methods:
         Then:
             - $sourcePortId: $.logicalSourcePort.openstackId
 
+      - $destinationPortId: null
+      - If: $.logicalDestinationPort != null
+        Then:
+            - $destinationPortId: $.logicalDestinationPort.openstackId
+
       - $data: $.sfcClient.createFlowClassifier(
           name => $.name, description => $.description,
           ethertype => $.ethertype, protocol => $.protocol,
@@ -87,7 +92,7 @@ Methods:
           source_ip_prefix => $.sourceIpPrefix,
           destination_ip_prefix => $.destinationIpPrefix,
           logical_source_port => $sourcePortId,
-          logical_destination_port => $.logicalDestinationPort.openstackId)
+          logical_destination_port => $destinationPortId)
       - $.id: $data.id
       - $.setAttr(deployed, true)
 
