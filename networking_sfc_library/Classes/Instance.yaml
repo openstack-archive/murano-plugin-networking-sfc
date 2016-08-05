@@ -25,6 +25,7 @@ Properties:
   ports:
     Contract: [$.class(NeutronPort).notNull()]
     Default: []
+    Usage: InOut
 
 Methods:
   prepareStackTemplate:
