@@ -1,0 +1,6 @@
+- project:
+    name: openstack/murano-plugin-networking-sfc
+    templates:
+      - merge-check
+      - openstack-python-jobs
+      - openstack-python35-jobs
